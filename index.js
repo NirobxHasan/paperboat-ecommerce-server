@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors')
 const { MongoClient } = require('mongodb');
+const ObjectID = require('mongodb').ObjectId;
 require('dotenv').config()
 
 const app = express();
@@ -19,12 +20,64 @@ async function run() {
       await client.connect();
       const database = client.db("Paperboat");
       const productsCollection = database.collection("products");
+      const ordersCollection = database.collection("orders");
+      const reviewsCollection = database.collection("reviews");
 
+
+      //Get All products
       app.get('/products', async(req,res)=>{
        const cursor = productsCollection.find({});
        const products = await cursor.toArray();
        res.json(products);
       })
+
+      //Get single product
+      app.get('/products/:id', async(req,res)=>{
+        const id = req.params.id;
+        const query = {_id:ObjectID(id)};
+        const product = await productsCollection.findOne(query)
+        res.json(product);
+       })
+
+       //Place order
+       app.post('/orders', async(req,res)=>{
+         const data = req.body;
+         const result = await ordersCollection.insertOne(data);
+         res.json(result)
+       })
+       //Get user order
+       app.get('/orders', async(req,res)=>{
+         const email_query = req.query.email;
+         console.log(email_query);
+        const query = {email: email_query};
+        const cursor = ordersCollection.find(query);
+        const products = await cursor.toArray();
+        res.json(products)
+
+      })
+        //Delete order
+        app.delete('/orders/:id', async(req,res)=>{
+          const id = req.params.id;
+          const query = {_id: ObjectID(id)}
+          const result = await ordersCollection.deleteOne(query)
+          res.json(result)
+        })
+
+        //review Post 
+       app.post('/reviews', async(req,res)=>{
+        const data = req.body;
+        const result = await reviewsCollection.insertOne(data);
+        res.json(result)
+      })
+        //Get review 
+       app.get('/reviews', async(req,res)=>{
+        const cursor = reviewsCollection.find({});
+        const reviews =  await cursor.toArray()
+        res.json(reviews)
+      })
+
+
+      
 
 
     } finally {
