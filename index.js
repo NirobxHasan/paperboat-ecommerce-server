@@ -57,7 +57,7 @@ async function run() {
        const  filter = {email:email};
        const user = await usersCollection.findOne(filter);
        let isAdmin = false;
-       if(user.role === 'admin'){
+       if(user?.role === 'admin'){
          isAdmin = true;
        }
        res.json({admin: isAdmin})
@@ -71,7 +71,9 @@ async function run() {
        const data = req.body;
        const result = await productsCollection.insertOne(data)
        res.json(result);
-     }) 
+     })
+     
+     
 
       //Get All products
       app.get('/products', async(req,res)=>{
@@ -80,6 +82,7 @@ async function run() {
        res.json(products);
       })
 
+
       //Get single product
       app.get('/products/:id', async(req,res)=>{
         const id = req.params.id;
@@ -87,6 +90,14 @@ async function run() {
         const product = await productsCollection.findOne(query)
         res.json(product);
        })
+
+       //delete products
+       app.delete('/products/:id', async(req,res)=>{
+        const id = req.params.id;
+        const query = {_id: ObjectID(id)}
+        const result = await productsCollection.deleteOne(query)
+        res.json(result)
+      })
 
        //Place order
        app.post('/orders', async(req,res)=>{
@@ -104,12 +115,33 @@ async function run() {
         res.json(products)
 
       })
+
+      //get all orders
+      app.get('/allOrders', async(req,res)=>{
+       const cursor = ordersCollection.find({});
+       const orders = await cursor.toArray();
+       res.json(orders)
+
+     })
         //Delete order
         app.delete('/orders/:id', async(req,res)=>{
           const id = req.params.id;
           const query = {_id: ObjectID(id)}
           const result = await ordersCollection.deleteOne(query)
           res.json(result)
+        })
+
+        //Change Status
+        app.put('/orders/:id', async(req,res)=>{
+          const id = req.params.id;
+          const data = req.body;
+          const filter = {_id: ObjectID(id)}
+          const options = { upsert: true };
+          const updateDoc = {
+            $set:{status: data.status}
+          }
+
+          const result = await ordersCollection.updateOne(filter,updateDoc,options)
         })
 
         //review Post 
